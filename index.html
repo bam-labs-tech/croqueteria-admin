@@ -1238,7 +1238,8 @@
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'verifyPin', pin: pin })
                 });
                 const data = await res.json();
@@ -1246,6 +1247,7 @@
                 if (data.success) {
                     unlockApp();
                 } else {
+                    error.textContent = 'PIN Incorrecto';
                     error.classList.remove('hidden');
                     input.value = '';
                     input.classList.add('border-red-500');
@@ -1253,9 +1255,7 @@
                 }
             } catch (err) {
                 console.error('Error verificando PIN:', err);
-                // Fallback: si el servidor no responde JSON (no-cors), intentar desbloqueo local
-                // Esto permite funcionar mientras se reconfigura CORS en el deploy
-                error.textContent = 'Error de conexión';
+                error.textContent = 'Error de conexión — revisa tu internet o el deploy del script';
                 error.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
@@ -1276,7 +1276,7 @@
             if (activeOrders.length === 0) return alert('No hay datos para exportar.');
 
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Folio,Fecha,Cliente,Monto,Estado\\n";
+            csvContent += "Folio,Fecha,Cliente,Monto,Estado\n";
 
             activeOrders.forEach(o => {
                 const id = o.orderId || o.id || '';
@@ -1285,7 +1285,7 @@
                 const total = cleanTotal(o.total);
                 const status = isCompleted(id) ? 'Entregado' : 'Pendiente';
 
-                csvContent += `${id},${date},${name},${total},${status}\\n`;
+                csvContent += `${id},${date},${name},${total},${status}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
