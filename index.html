@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Admin — La Croquetería</title>
+    <link rel="manifest" href="./manifest-admin.json?v=1">
+    <meta name="theme-color" content="#09090b">
+    <link rel="icon" href="./assets/favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png?v=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -239,6 +243,23 @@
         </div>
     </header>
 
+    <div id="pwaInstallBanner" class="hidden max-w-lg mx-auto px-4 pt-20 pb-2 z-30 relative animate-fade-in-up">
+        <div class="bg-gradient-to-r from-dark-card to-dark-bg border border-brand-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-500/20 text-brand-500 rounded-xl flex items-center justify-center border border-brand-500/30 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold text-sm leading-tight">Instalar Panel Admin</h4>
+                    <p class="text-brand-500/80 text-[10px] uppercase tracking-wider font-semibold">Acceso Directo</p>
+                </div>
+            </div>
+            <button onclick="installPWA()" class="bg-brand-500 hover:bg-brand-400 text-black px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0">
+                Instalar
+            </button>
+        </div>
+    </div>
+
     <!-- Main Content Area -->
     <main class="max-w-lg mx-auto pt-[72px] pb-24 px-4" id="mainContent">
         <!-- Tab content injected here -->
@@ -370,29 +391,14 @@
         let lastZReportTimestamp = localStorage.getItem('lastZReportTimestamp') || null;
         let lastDataHash = '';
         let agotados = [];
+        let catalog = [];
 
-        const products = [
-            // Alimento
-            { id: 'p1', category: 'alimento', species: 'dog', name: 'Alimento Royal Canin Cachorro', price: 1250.00, desc: 'Croquetas premium formuladas científicamente para el desarrollo inmunológico del cachorro.', isPuppy: true, img: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p2', category: 'alimento', species: 'dog', name: 'Purina Pro Plan Adulto Cuidado Óptimo', price: 1450.00, desc: 'Nutrición de vanguardia con prebióticos para perros adultos con alta demanda energética.', img: 'https://images.unsplash.com/photo-1596492784531-6e6eb5ea9993?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p3', category: 'alimento', species: 'dog', name: 'Nupec Senior Plus Articulaciones', price: 980.00, desc: 'Alimento especializado con glucosamina y condroitina para cuidar los huesos de tu mascota.', isSenior: true, img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p11', category: 'alimento', species: 'dog', name: 'Hills Science Diet Adulto', price: 1600.00, desc: 'Alimento con soporte digestivo avanzado para estómagos sensibles o padecimientos.', img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'c1', category: 'alimento', species: 'cat', name: 'Croquetas Gato Esterilizado', price: 1100.00, desc: 'Fórmula especial para control de peso en gatos esterilizados.', img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=400&h=300' },
-            // Casas
-            { id: 'p4', category: 'casas', species: 'dog', name: 'Cama Ortopédica Memory Foam', price: 899.00, desc: 'Soporte viscoelástico para un descanso sin dolor, ideal para la etapa senior.', isSenior: true, img: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p5', category: 'casas', species: 'dog', name: 'Casa Iglú Suave y Térmica', price: 450.00, desc: 'Refugio cálido y protector que reduce el estrés de mascotas pequeñas o cachorritos.', isPuppy: true, img: 'https://images.unsplash.com/photo-1591946614720-90a587da4a36?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'c2', category: 'casas', species: 'cat', name: 'Torre Rascador de 3 Niveles', price: 1250.00, desc: 'Centro de entretenimiento y descanso para que tu gato se divierta y relaje.', img: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=400&h=300' },
-            // Higiene
-            { id: 'p6', category: 'higiene', species: 'dog', name: 'Empapadores de Entrenamiento XXL', price: 299.00, desc: 'Alfombrillas ultra absorbentes con atrayente olfativo para cachorros.', isPuppy: true, img: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p7', category: 'higiene', species: 'dog', name: 'Champú Sólido de Avena y Miel', price: 180.00, desc: 'Limpieza profunda e hidratación profunda con ingredientes naturales para pelaje brillante.', img: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p12', category: 'higiene', species: 'both', name: 'Cepillo Deslanador Pro', price: 340.00, desc: 'Reduce la caída de pelo hasta un 90% con este cepillo ergonómico y seguro.', img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'c3', category: 'higiene', species: 'cat', name: 'Arena Aglutinante Control Premium', price: 320.00, desc: 'Ultra aglomerante con carbón activado para máximo control de olores.', img: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400&h=300' },
-            // Premios
-            { id: 'p8', category: 'premios', species: 'dog', name: 'Huesos Dentales Suaves', price: 120.00, desc: 'Masticables que combaten el sarro y alivian las encías en cachorros en desarrollo.', isPuppy: true, img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p9', category: 'premios', species: 'dog', name: 'Snacks Condroprotectores Senior', price: 350.00, desc: 'Premios funcionales que ayudan a nutrir el cartílago y mejorar la movilidad general.', isSenior: true, img: 'https://images.unsplash.com/photo-1583337260546-28b6bf66d004?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'p10', category: 'premios', species: 'dog', name: 'Pelota Kong Resistente', price: 199.00, desc: 'Caucho natural ultrarresistente para perros incansables y mordedores implacables.', img: 'https://images.unsplash.com/photo-1554589333-6a97dafd905d?auto=format&fit=crop&q=80&w=400&h=300' },
-            { id: 'c4', category: 'premios', species: 'cat', name: 'Ratones de Juguete con Catnip', price: 150.00, desc: 'Estimulantes y divertidos, fomentan el instinto cazador de tu gato.', img: 'https://images.unsplash.com/photo-1554589333-6a97dafd905d?auto=format&fit=crop&q=80&w=400&h=300' }
-        ];
+        // --- Cache-First (Local Storage) ---
+        const CACHE_KEY = 'bamlabs_crm_cache';
+
+        // --- Lazy Rendering ---
+        let pendingItemsToShow = 20;
+        let historyItemsToShow = 20;
 
         // --- Notification Sound ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -615,36 +621,88 @@
             return 0;
         }
 
-        // --- Data Fetching ---
+        // --- Data Fetching (Cache-First) ---
+
+        /**
+         * Hydrates UI state from a parsed data object (cache or network).
+         * @param {Object} data  — raw response from Apps Script or parsed cache
+         * @param {boolean} isFromCache — true when loading from localStorage
+         */
+        function hydrateFromData(data, isFromCache = false) {
+            const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
+            const incomingAgotados = data.agotados || [];
+            const incomingCatalog = data.catalog || [];
+
+            // Data diffing — skip re-render if nothing changed
+            const currentHash = JSON.stringify({ orders, agotados: incomingAgotados, catalog: incomingCatalog });
+            if (currentHash === lastDataHash) return;
+            lastDataHash = currentHash;
+
+            agotados = incomingAgotados;
+            catalog = incomingCatalog;
+
+            // Check for new orders (skip on cache load to avoid phantom notifications)
+            if (!isFirstLoad && !isFromCache) {
+                orders.forEach(o => {
+                    const id = o.orderId || o.id || '';
+                    if (id && !knownOrderIds.has(id)) {
+                        playNotifSound();
+                    }
+                });
+            }
+
+            // Update known IDs
+            knownOrderIds = new Set(orders.map(o => o.orderId || o.id || ''));
+            allOrders = orders;
+            isFirstLoad = false;
+
+            // Reset lazy rendering counters so the user starts from the top
+            pendingItemsToShow = 20;
+            historyItemsToShow = 20;
+
+            render();
+        }
+
+        /**
+         * Loads cached data from localStorage (synchronous, instant UI).
+         * Returns true if cache existed and was applied.
+         */
+        function loadFromCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return false;
+                const cached = JSON.parse(raw);
+                hydrateFromData(cached, true);
+                console.log('[Cache-First] UI pintada desde caché local.');
+                return true;
+            } catch (e) {
+                console.warn('[Cache-First] Caché inválida, se ignora:', e);
+                localStorage.removeItem(CACHE_KEY);
+                return false;
+            }
+        }
+
+        /**
+         * Writes fresh API data to localStorage for next load.
+         */
+        function saveToCache(data) {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('[Cache-First] No se pudo guardar en caché:', e);
+            }
+        }
+
         async function fetchOrders() {
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL);
                 const data = await res.json();
-                const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
-                const incomingAgotados = data.agotados || [];
 
-                // Data diffing — skip re-render if nothing changed
-                const currentHash = JSON.stringify({ orders, agotados: incomingAgotados });
-                if (currentHash === lastDataHash) return;
-                lastDataHash = currentHash;
+                // Persist fresh data to cache
+                saveToCache(data);
 
-                agotados = incomingAgotados;
-
-                // Check for new orders
-                if (!isFirstLoad) {
-                    orders.forEach(o => {
-                        const id = o.orderId || o.id || '';
-                        if (id && !knownOrderIds.has(id)) {
-                            playNotifSound();
-                        }
-                    });
-                }
-
-                // Update known IDs
-                knownOrderIds = new Set(orders.map(o => o.orderId || o.id || ''));
-                allOrders = orders;
-                isFirstLoad = false;
-                render();
+                // Hydrate UI with network data
+                hydrateFromData(data, false);
 
                 // Mark connection alive
                 const status = document.getElementById('connectionStatus');
@@ -666,6 +724,9 @@
         function switchTab(tab) {
             currentTab = tab;
             searchQuery = '';
+            // Reset lazy counters when switching tabs so you start from the top
+            pendingItemsToShow = 20;
+            historyItemsToShow = 20;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('text-brand-500');
                 btn.classList.add('text-gray-500');
@@ -762,6 +823,10 @@
                 badge.classList.add('hidden');
             }
 
+            // Lazy Rendering: only show up to pendingItemsToShow
+            const visible = filtered.slice(0, pendingItemsToShow);
+            const hasMore = filtered.length > pendingItemsToShow;
+
             let html = `
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-white">Pedidos Pendientes</h2>
@@ -782,10 +847,26 @@
                     <p class="text-sm text-gray-500 max-w-[240px]">${q ? 'Intenta con otro término' : 'No hay pedidos pendientes por el momento'}</p>
                 </div>`;
             } else {
-                html += `<div class="space-y-3">${filtered.map(o => buildOrderCard(o)).join('')}</div>`;
+                html += `<div class="space-y-3">${visible.map(o => buildOrderCard(o)).join('')}</div>`;
+                if (hasMore) {
+                    html += `
+                    <div class="flex justify-center mt-5">
+                        <button onclick="loadMorePending()"
+                            class="group flex items-center gap-2 bg-dark-card border border-dark-border text-gray-400 text-sm font-semibold px-6 py-3 rounded-xl hover:border-brand-500/40 hover:text-brand-500 transition-all duration-200">
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
+                            Cargar más registros…
+                            <span class="text-xs text-gray-600">(${visible.length}/${filtered.length})</span>
+                        </button>
+                    </div>`;
+                }
             }
 
             el.innerHTML = html;
+        }
+
+        function loadMorePending() {
+            pendingItemsToShow += 20;
+            render();
         }
 
         function renderHistory(el) {
@@ -799,9 +880,13 @@
                 })
                 : completed;
 
-            // Group by date
+            // Lazy Rendering: slice first, then group
+            const visible = filtered.slice(0, historyItemsToShow);
+            const hasMore = filtered.length > historyItemsToShow;
+
+            // Group visible items by date
             const groups = {};
-            filtered.forEach(o => {
+            visible.forEach(o => {
                 const label = getDateLabel(o.timestamp || o.fecha || o.date);
                 if (!groups[label]) groups[label] = [];
                 groups[label].push(o);
@@ -837,9 +922,26 @@
                         <div class="space-y-3">${orders.map(o => buildOrderCard(o, true)).join('')}</div>
                     </div>`;
                 });
+
+                if (hasMore) {
+                    html += `
+                    <div class="flex justify-center mt-5">
+                        <button onclick="loadMoreHistory()"
+                            class="group flex items-center gap-2 bg-dark-card border border-dark-border text-gray-400 text-sm font-semibold px-6 py-3 rounded-xl hover:border-brand-500/40 hover:text-brand-500 transition-all duration-200">
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
+                            Cargar más registros…
+                            <span class="text-xs text-gray-600">(${visible.length}/${filtered.length})</span>
+                        </button>
+                    </div>`;
+                }
             }
 
             el.innerHTML = html;
+        }
+
+        function loadMoreHistory() {
+            historyItemsToShow += 20;
+            render();
         }
 
         // --- Drill-down helpers ---
@@ -890,7 +992,7 @@
 
         // --- Inventario ---
         function renderInventory(el) {
-            if (products.length === 0) {
+            if (catalog.length === 0) {
                 el.innerHTML = `<div class="p-4 text-center text-slate-400">No hay productos en el catálogo.</div>`;
                 return;
             }
@@ -900,7 +1002,7 @@
             const handleActiveClasses = 'translate-x-5';
             const handleInactiveClasses = 'translate-x-0';
 
-            const listHtml = products.map(prod => {
+            const listHtml = catalog.map(prod => {
                 const isAgotado = agotados.includes(prod.id);
                 // Si NO está agotado, el switch está prendido (Disponible)
                 const isAvailable = !isAgotado;
@@ -943,7 +1045,7 @@
             render(); // Update UI immediately
 
             // Update local hash so polling doesn't immediately overwrite the optimistic update with old fetching state before the sheet saves
-            lastDataHash = JSON.stringify({ orders: allOrders, agotados: agotados });
+            lastDataHash = JSON.stringify({ orders: allOrders, agotados: agotados, catalog: catalog });
 
             const payload = {
                 action: 'updateInventory',
@@ -1197,16 +1299,25 @@
             setTimeout(() => sheet.classList.add('hidden'), 350);
         }
 
-        // --- Init ---
+        // --- Init (Cache-First) ---
         function init() {
             // Resume audio context on first tap anywhere
             document.addEventListener('click', () => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
             }, { once: true });
 
+            // 1️⃣ Intenta pintar la UI al instante desde caché
+            const hadCache = loadFromCache();
+
+            // 2️⃣ Fetch real en segundo plano (no bloquea el hilo principal)
+            //    Si había caché, el usuario ya ve datos; si no, verá el loading normal.
             fetchOrders();
+
+            // 3️⃣ Polling periódico
             pollTimer = setInterval(fetchOrders, POLL_INTERVAL);
-            render();
+
+            // Solo renderizar skeleton si NO había caché
+            if (!hadCache) render();
         }
 
         // --- Lógica de Seguridad (PIN — validación en servidor) ---
@@ -1296,6 +1407,51 @@
             link.click();
             document.body.removeChild(link);
         };
+    </script>
+
+    <script>
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.classList.remove('hidden');
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Admin App instalada con éxito');
+                    document.getElementById('pwaInstallBanner').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.location.reload(true);
+                            }
+                        });
+                    });
+                }).catch(error => console.error('Error Service Worker:', error));
+
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        refreshing = true;
+                        window.location.reload(true);
+                    }
+                });
+            });
+        }
     </script>
 </body>
 
