@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Admin — La Croquetería</title>
+    <link rel="manifest" href="./manifest-admin.json?v=1">
+    <meta name="theme-color" content="#09090b">
+    <link rel="icon" href="./assets/favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png?v=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d',
+                            400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309',
+                            800: '#92400e', 900: '#78350f', 950: '#451a03',
+                        },
+                        dark: { bg: '#09090b', card: '#18181b', border: '#27272a' }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        fancy: ['"Playfair Display"', 'serif'],
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.4s ease-out forwards',
+                        'slide-up': 'slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+                        'pulse-dot': 'pulseDot 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(12px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)' },
+                            '100%': { transform: 'translateY(0)' },
+                        },
+                        pulseDot: {
+                            '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                            '50%': { opacity: '.5', transform: 'scale(1.3)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
+
+        .glass-header {
+            background: rgba(9, 9, 11, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-nav {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .glass-card {
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:active {
+            transform: scale(0.98);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .bottom-sheet-overlay {
+            transition: opacity 0.3s ease;
+        }
+
+        .bottom-sheet-content {
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(24, 24, 27, 1) 0%, rgba(39, 39, 42, 0.5) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .search-input {
+            background: rgba(39, 39, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08);
+            outline: none;
+        }
+
+        @keyframes notifPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+        }
+
+        .notif-pulse {
+            animation: notifPulse 1.5s ease-out 2;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            z-index: 200;
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #f4f4f5;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            max-width: 90vw;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        .toast .toast-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div id="toastIcon"></div>
+        <span id="toastMsg"></span>
+    </div>
+
+    <div id="pinScreen"
+        class="fixed inset-0 z-[100] bg-dark-bg flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+        <div
+            class="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center mb-6 border border-brand-500/20 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+            <svg class="w-8 h-8 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">Acceso Restringido</h2>
+        <p class="text-sm text-gray-400 mb-8 text-center">Ingresa el PIN de administrador para acceder a La Croquetería.
+        </p>
+
+        <div class="flex gap-3 mb-8">
+            <input type="password" id="pinInput" maxlength="4"
+                class="w-32 h-14 bg-dark-card border border-dark-border rounded-xl text-center text-2xl text-white tracking-[0.5em] focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all"
+                placeholder="••••" inputmode="numeric" pattern="[0-9]*" onkeydown="if(event.key==='Enter')verifyPIN()">
+        </div>
+        <p id="pinError" class="text-red-500 text-xs font-bold uppercase tracking-wider hidden mb-4 animate-pulse">PIN
+            Incorrecto</p>
+        <button onclick="verifyPIN()"
+            class="w-full max-w-[200px] bg-brand-500 text-black font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-brand-400 transition-colors sink-on-press">Desbloquear</button>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed top-0 inset-x-0 z-40 glass-header safe-top">
+        <div class="max-w-lg mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 flex items-center justify-center">
+                    <img src="./assets/logo.png" alt="Logo"
+                        class="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white leading-tight">La <span
+                            class="text-brand-500">Croquetería</span></h1>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Panel Admin</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div id="connectionStatus"
+                    class="flex items-center gap-1.5 bg-dark-card border border-dark-border rounded-lg px-2.5 py-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot"></div>
+                    <span class="text-[10px] text-gray-400 font-medium">En vivo</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="pwaInstallBanner" class="hidden max-w-lg mx-auto px-4 pt-20 pb-2 z-30 relative animate-fade-in-up">
+        <div class="bg-gradient-to-r from-dark-card to-dark-bg border border-brand-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-500/20 text-brand-500 rounded-xl flex items-center justify-center border border-brand-500/30 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold text-sm leading-tight">Instalar Panel Admin</h4>
+                    <p class="text-brand-500/80 text-[10px] uppercase tracking-wider font-semibold">Acceso Directo</p>
+                </div>
+            </div>
+            <button onclick="installPWA()" class="bg-brand-500 hover:bg-brand-400 text-black px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0">
+                Instalar
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-lg mx-auto pt-[72px] pb-24 px-4" id="mainContent">
+        <!-- Tab content injected here -->
+    </main>
+
+    <div
+        class="py-6 text-center text-[10px] font-medium text-gray-500/50 uppercase tracking-[0.2em] flex flex-col items-center gap-1.5 mb-20 max-w-lg mx-auto">
+        <span class="opacity-40"><img src="./assets/logo.png" alt="BAM LABS"
+                class="w-4 h-4 object-contain grayscale"></span>
+        <span>Tecnología por <span class="text-brand-500/60">BAM LABS</span></span>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 inset-x-0 z-40 glass-nav safe-bottom">
+        <div class="max-w-lg mx-auto flex">
+            <button onclick="switchTab('pending')" id="tabPending"
+                class="tab-btn flex-1 flex flex-col items-center gap-1 py-3 text-brand-500">
+                <div class="relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                    <span id="pendingBadge"
+                        class="absolute -top-1.5 -right-2.5 bg-brand-500 text-black text-[9px] font-bold w-4.5 h-4.5 min-w-[18px] rounded-full flex items-center justify-center hidden">0</span>
+                </div>
+                <span class="text-[10px] font-semibold">Pendientes</span>
+            </button>
+            <button onclick="switchTab('history')" id="tabHistory"
+                class="tab-btn flex-1 flex flex-col items-center gap-1 py-3 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-[10px] font-semibold">Historial</span>
+            </button>
+            <button onclick="switchTab('analytics')" id="tabAnalytics"
+                class="tab-btn flex-1 flex flex-col items-center gap-1 py-3 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+                <span class="text-[10px] font-semibold">Resumen</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="tabInventory"
+                class="tab-btn flex-1 flex flex-col items-center gap-1 py-3 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H2.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+                <span class="text-[10px] font-semibold">Inventario</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Bottom Sheet (Order Detail) -->
+    <div id="detailSheet" class="fixed inset-0 z-50 hidden">
+        <div class="bottom-sheet-overlay absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0"
+            onclick="closeDetail()"></div>
+        <div
+            class="bottom-sheet-content absolute bottom-0 inset-x-0 max-w-lg mx-auto bg-dark-card border-t border-dark-border rounded-t-3xl max-h-[85vh] flex flex-col translate-y-full">
+            <div class="flex justify-center pt-3 pb-1">
+                <div class="w-10 h-1 bg-gray-700 rounded-full"></div>
+            </div>
+            <div class="px-6 pt-2 pb-4 border-b border-dark-border flex items-center justify-between shrink-0">
+                <h3 class="text-lg font-bold text-white" id="detailTitle">Detalle del Pedido</h3>
+                <button onclick="closeDetail()"
+                    class="w-8 h-8 rounded-full bg-dark-bg border border-dark-border flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-5 no-scrollbar" id="detailBody">
+                <!-- Injected -->
+            </div>
+            <div class="p-4 border-t border-dark-border shrink-0" id="detailActions">
+                <!-- Injected -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirm Modal -->
+    <div id="resetModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+            id="resetOverlay" onclick="closeResetModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-6">
+            <div class="bg-dark-card border border-brand-500/20 rounded-3xl p-6 max-w-sm w-[90%] mx-auto shadow-2xl transform scale-95 opacity-0 transition-all duration-300"
+                id="resetContent">
+                <div class="flex flex-col items-center text-center">
+                    <div
+                        class="w-14 h-14 bg-brand-500/15 rounded-2xl flex items-center justify-center mb-4 border border-brand-500/20">
+                        <svg class="w-7 h-7 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1.5">Finalizar el Dia?</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed mb-6">Esto reiniciara los contadores a cero. El
+                        historial completo se conservara intacto.</p>
+                    <div class="flex gap-3 w-full">
+                        <button onclick="closeResetModal()"
+                            class="flex-1 bg-dark-bg border border-dark-border text-gray-400 font-semibold py-3 rounded-xl hover:border-gray-600 hover:text-gray-300 transition-all text-sm">Cancelar</button>
+                        <button onclick="confirmZReport()"
+                            class="flex-1 bg-gradient-to-r from-brand-500 to-brand-400 text-black font-semibold py-3 rounded-xl hover:from-brand-400 hover:to-brand-300 transition-all text-sm shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            Si, Finalizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjEX2VsO2Yz7yojxnoCnLK6B_HeVXJjUB6hqLkucREZGROlTUWeAvpQo6w3wCfsHRAbw/exec';
+        const POLL_INTERVAL = 10000;
+
+        // --- State ---
+        let allOrders = [];
+        let currentTab = 'pending';
+        let searchQuery = '';
+        let knownOrderIds = new Set();
+        let isFirstLoad = true;
+        let pollTimer = null;
+        let lastZReportTimestamp = localStorage.getItem('lastZReportTimestamp') || null;
+        let lastDataHash = '';
+        let agotados = [];
+        let catalog = [];
+
+        // --- Cache-First (Local Storage) ---
+        const CACHE_KEY = 'bamlabs_crm_cache';
+
+        // --- Lazy Rendering ---
+        let pendingItemsToShow = 20;
+        let historyItemsToShow = 20;
+
+        // --- Notification Sound ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playNotifSound() {
+            try {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(880, audioCtx.currentTime);
+                o.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.08);
+                o.frequency.setValueAtTime(880, audioCtx.currentTime + 0.16);
+                g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                o.start(audioCtx.currentTime);
+                o.stop(audioCtx.currentTime + 0.4);
+            } catch (e) { }
+        }
+
+        // --- Helpers ---
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
+        }
+
+        // Clean currency strings like "$1,295.00" to a number
+        function cleanTotal(val) {
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]+/g, '')) || 0;
+            return 0;
+        }
+
+        // Parse Spanish date strings: "30/3/2026, 16:07:00" or "30/3/2026 16:07:00" or ISO
+        function parseSpanishDate(str) {
+            if (!str) return null;
+            // Try native Date first (works for ISO strings)
+            const native = new Date(str);
+            if (!isNaN(native.getTime())) return native;
+            // Parse dd/mm/yyyy with optional time
+            try {
+                const cleaned = str.replace(',', '').trim();
+                const parts = cleaned.split(/[\s]+/);
+                const datePart = parts[0]; // "30/3/2026"
+                const timePart = parts[1] || '00:00:00'; // "16:07:00"
+                const [day, month, year] = datePart.split('/').map(Number);
+                const [hours, minutes, seconds] = timePart.split(':').map(Number);
+                return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+            } catch { return null; }
+        }
+
+        function formatTime(dateStr) {
+            try {
+                const d = parseSpanishDate(dateStr);
+                if (!d || isNaN(d.getTime())) return '--:--';
+                return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } catch { return '--:--'; }
+        }
+
+        function formatDate(dateStr) {
+            try {
+                const d = parseSpanishDate(dateStr);
+                if (!d || isNaN(d.getTime())) return '';
+                return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+            } catch { return ''; }
+        }
+
+        function getDateLabel(dateStr) {
+            try {
+                const d = parseSpanishDate(dateStr);
+                if (!d || isNaN(d.getTime())) return '';
+                const today = new Date();
+                const yesterday = new Date();
+                yesterday.setDate(today.getDate() - 1);
+                if (d.toDateString() === today.toDateString()) return 'Hoy';
+                if (d.toDateString() === yesterday.toDateString()) return 'Ayer';
+                return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+            } catch { return ''; }
+        }
+
+        // Check if order date is after the last Z-report cutoff (and still today)
+        function isAfterZReport(dateStr) {
+            if (!lastZReportTimestamp) return isToday(dateStr);
+            const d = parseSpanishDate(dateStr);
+            if (!d || isNaN(d.getTime())) return false;
+            const cutoff = new Date(lastZReportTimestamp);
+            return d.toDateString() === new Date().toDateString() && d.getTime() > cutoff.getTime();
+        }
+
+        function isToday(dateStr) {
+            try {
+                const d = parseSpanishDate(dateStr);
+                if (!d || isNaN(d.getTime())) return false;
+                return d.toDateString() === new Date().toDateString();
+            } catch { return false; }
+        }
+
+        function isCompleted(orderId) {
+            const order = allOrders.find(o => (o.orderId || o.id || '') === orderId);
+            if (!order) return false;
+            const estado = (order.estado || order.Estado || '').toString().toLowerCase().trim();
+            return estado === 'entregado';
+        }
+
+        // --- Toast Notification ---
+        let toastTimer = null;
+        function showToast(message, type = 'loading') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMsg');
+
+            clearTimeout(toastTimer);
+            msg.textContent = message;
+
+            if (type === 'loading') {
+                icon.innerHTML = '<div class="toast-spinner"></div>';
+            } else if (type === 'success') {
+                icon.innerHTML = '<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>';
+            } else if (type === 'error') {
+                icon.innerHTML = '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+            }
+
+            toast.classList.add('show');
+
+            if (type !== 'loading') {
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+            }
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.remove('show');
+        }
+
+        async function markCompleted(orderId) {
+            // Optimistic UI update
+            const order = allOrders.find(o => (o.orderId || o.id || '') === orderId);
+            if (order) { order.estado = 'Entregado'; order.Estado = 'Entregado'; }
+            render();
+            closeDetail();
+            showToast('Guardando estado...', 'loading');
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateOrderStatus', orderId: orderId, status: true })
+                });
+                showToast('Pedido #' + orderId + ' → Entregado', 'success');
+            } catch (err) {
+                console.error('Error actualizando estado:', err);
+                showToast('Error al guardar', 'error');
+            }
+            // Force a fresh data pull to sync with sheet
+            lastDataHash = '';
+            fetchOrders();
+        }
+
+        async function unmarkCompleted(orderId) {
+            // Optimistic UI update
+            const order = allOrders.find(o => (o.orderId || o.id || '') === orderId);
+            if (order) { order.estado = 'Pendiente'; order.Estado = 'Pendiente'; }
+            render();
+            closeDetail();
+            showToast('Guardando estado...', 'loading');
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateOrderStatus', orderId: orderId, status: false })
+                });
+                showToast('Pedido #' + orderId + ' → Pendiente', 'success');
+            } catch (err) {
+                console.error('Error actualizando estado:', err);
+                showToast('Error al guardar', 'error');
+            }
+            // Force a fresh data pull to sync with sheet
+            lastDataHash = '';
+            fetchOrders();
+        }
+
+        // --- Parse items from various data shapes ---
+        function parseItems(order) {
+            const raw = order.items;
+            // If it's already an array, return it
+            if (Array.isArray(raw)) return raw;
+            // If it's a string
+            if (typeof raw === 'string') {
+                // Try JSON parse first (structured data)
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) return parsed;
+                } catch { /* not JSON, continue */ }
+                // Parse newline-separated format: "1x Producto A ($100.00)\n2x Producto B ($200.00)"
+                return raw.split('\n').filter(line => line.trim()).map(line => {
+                    const match = line.trim().match(/^(\d+)x\s+(.+?)(?:\s*\(\$?([\d,]+\.?\d*)\))?$/);
+                    if (match) {
+                        const qty = parseInt(match[1]) || 1;
+                        const name = match[2].trim();
+                        const price = parseFloat((match[3] || '0').replace(/,/g, '')) || 0;
+                        return { quantity: qty, name: name, price: price, subtotal: price };
+                    }
+                    // Fallback: treat entire line as product name
+                    return { quantity: 1, name: line.trim(), price: 0, subtotal: 0 };
+                });
+            }
+            return [];
+        }
+
+        // Count items (handles both parsed arrays and raw newline strings)
+        function countItems(order) {
+            const raw = order.items;
+            if (typeof raw === 'string' && raw.trim()) {
+                // Try to parse for accurate qty count
+                const items = parseItems(order);
+                return items.reduce((s, i) => s + (i.quantity || 1), 0);
+            }
+            if (Array.isArray(raw)) return raw.reduce((s, i) => s + (i.quantity || 1), 0);
+            return 0;
+        }
+
+        // --- Data Fetching (Cache-First) ---
+
+        /**
+         * Hydrates UI state from a parsed data object (cache or network).
+         * @param {Object} data  — raw response from Apps Script or parsed cache
+         * @param {boolean} isFromCache — true when loading from localStorage
+         */
+        function hydrateFromData(data, isFromCache = false) {
+            const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
+            const incomingAgotados = data.agotados || [];
+            const incomingCatalog = data.catalog || [];
+
+            // Data diffing — skip re-render if nothing changed
+            const currentHash = JSON.stringify({ orders, agotados: incomingAgotados, catalog: incomingCatalog });
+            if (currentHash === lastDataHash) return;
+            lastDataHash = currentHash;
+
+            agotados = incomingAgotados;
+            catalog = incomingCatalog;
+
+            // Check for new orders (skip on cache load to avoid phantom notifications)
+            if (!isFirstLoad && !isFromCache) {
+                orders.forEach(o => {
+                    const id = o.orderId || o.id || '';
+                    if (id && !knownOrderIds.has(id)) {
+                        playNotifSound();
+                    }
+                });
+            }
+
+            // Update known IDs
+            knownOrderIds = new Set(orders.map(o => o.orderId || o.id || ''));
+            allOrders = orders;
+            isFirstLoad = false;
+
+            // Reset lazy rendering counters so the user starts from the top
+            pendingItemsToShow = 20;
+            historyItemsToShow = 20;
+
+            render();
+        }
+
+        /**
+         * Loads cached data from localStorage (synchronous, instant UI).
+         * Returns true if cache existed and was applied.
+         */
+        function loadFromCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return false;
+                const cached = JSON.parse(raw);
+                hydrateFromData(cached, true);
+                console.log('[Cache-First] UI pintada desde caché local.');
+                return true;
+            } catch (e) {
+                console.warn('[Cache-First] Caché inválida, se ignora:', e);
+                localStorage.removeItem(CACHE_KEY);
+                return false;
+            }
+        }
+
+        /**
+         * Writes fresh API data to localStorage for next load.
+         */
+        function saveToCache(data) {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('[Cache-First] No se pudo guardar en caché:', e);
+            }
+        }
+
+        async function fetchOrders() {
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await res.json();
+
+                // Persist fresh data to cache
+                saveToCache(data);
+
+                // Hydrate UI with network data
+                hydrateFromData(data, false);
+
+                // Mark connection alive
+                const status = document.getElementById('connectionStatus');
+                if (status) {
+                    status.querySelector('div').className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot';
+                    status.querySelector('span').textContent = 'En vivo';
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                const status = document.getElementById('connectionStatus');
+                if (status) {
+                    status.querySelector('div').className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+                    status.querySelector('span').textContent = 'Sin conexión';
+                }
+            }
+        }
+
+        // --- Tab Navigation ---
+        function switchTab(tab) {
+            currentTab = tab;
+            searchQuery = '';
+            // Reset lazy counters when switching tabs so you start from the top
+            pendingItemsToShow = 20;
+            historyItemsToShow = 20;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-brand-500');
+                btn.classList.add('text-gray-500');
+            });
+            const active = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (active) {
+                active.classList.remove('text-gray-500');
+                active.classList.add('text-brand-500');
+            }
+            render();
+        }
+
+        // --- Rendering ---
+        function render() {
+            const main = document.getElementById('mainContent');
+            if (currentTab === 'pending') renderPending(main);
+            else if (currentTab === 'history') renderHistory(main);
+            else if (currentTab === 'inventory') renderInventory(main);
+            else renderAnalytics(main);
+        }
+
+        function buildSearchBar(placeholder) {
+            return `
+            <div class="relative mb-5">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <svg class="w-4.5 h-4.5 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </div>
+                <input type="text" class="search-input w-full rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-gray-600 font-medium"
+                    placeholder="${placeholder}" value="${searchQuery}" oninput="searchQuery=this.value;render()">
+            </div>`;
+        }
+
+        function buildOrderCard(order, showDate = false) {
+            const id = order.orderId || order.id || '---';
+            const name = order.customer || order.nombre || 'Sin nombre';
+            const total = cleanTotal(order.total);
+            const time = formatTime(order.timestamp || order.fecha || order.date);
+            const payment = order.payment || order.pago || '';
+            const delivery = order.delivery || order.entrega || '';
+            const completed = isCompleted(id);
+            const itemCount = countItems(order);
+
+            const isPickup = delivery.toLowerCase().includes('recoger') || delivery.toLowerCase().includes('tienda');
+            const deliveryIcon = isPickup
+                ? `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72" /></svg>`
+                : `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m-2.25 0V5.625m0 0a2.25 2.25 0 00-2.25-2.25H7.5a2.25 2.25 0 00-2.25 2.25v5.2" /></svg>`;
+
+            const dateLabel = showDate ? `<span class="text-gray-600 mx-1.5">·</span><span>${formatDate(order.timestamp || order.fecha || order.date)}</span>` : '';
+
+            return `
+            <div class="glass-card rounded-2xl p-4 cursor-pointer animate-fade-in-up ${completed ? 'opacity-60' : ''}" onclick='openDetail(${JSON.stringify(order).replace(/'/g, "&#39;")})'>
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-brand-500 text-sm font-bold font-mono">#${id}</span>
+                            ${completed ? '<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-semibold uppercase tracking-wider">Entregado</span>' : '<span class="text-[10px] bg-brand-500/15 text-brand-500 border border-brand-500/20 px-2 py-0.5 rounded-md font-semibold uppercase tracking-wider">Nuevo</span>'}
+                        </div>
+                        <h4 class="text-white font-semibold mt-1.5">${name}</h4>
+                    </div>
+                    <span class="text-lg font-bold text-white">${formatCurrency(total)}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            ${time}${dateLabel}
+                        </span>
+                        <span class="flex items-center gap-1">${deliveryIcon} ${isPickup ? 'Tienda' : 'Domicilio'}</span>
+                    </div>
+                    <span class="text-xs text-gray-600">${itemCount} art.</span>
+                </div>
+            </div>`;
+        }
+
+        function renderPending(el) {
+            const pending = allOrders.filter(o => !isCompleted(o.orderId || o.id || ''));
+            const q = searchQuery.toLowerCase().trim();
+            const filtered = q
+                ? pending.filter(o => {
+                    const id = (o.orderId || o.id || '').toLowerCase();
+                    const name = (o.customer || o.nombre || '').toLowerCase();
+                    return id.includes(q) || name.includes(q);
+                })
+                : pending;
+
+            // Update badge
+            const badge = document.getElementById('pendingBadge');
+            if (pending.length > 0) {
+                badge.textContent = pending.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Lazy Rendering: only show up to pendingItemsToShow
+            const visible = filtered.slice(0, pendingItemsToShow);
+            const hasMore = filtered.length > pendingItemsToShow;
+
+            let html = `
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">Pedidos Pendientes</h2>
+                    <span class="text-xs text-gray-500 font-medium">${filtered.length} orden${filtered.length !== 1 ? 'es' : ''}</span>
+                </div>
+                ${buildSearchBar('Buscar por folio o cliente...')}
+            `;
+
+            if (filtered.length === 0) {
+                html += `
+                <div class="flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mb-5">
+                        <svg class="w-10 h-10 text-brand-500/30" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">${q ? 'Sin resultados' : 'Todo al día'}</h3>
+                    <p class="text-sm text-gray-500 max-w-[240px]">${q ? 'Intenta con otro término' : 'No hay pedidos pendientes por el momento'}</p>
+                </div>`;
+            } else {
+                html += `<div class="space-y-3">${visible.map(o => buildOrderCard(o)).join('')}</div>`;
+                if (hasMore) {
+                    html += `
+                    <div class="flex justify-center mt-5">
+                        <button onclick="loadMorePending()"
+                            class="group flex items-center gap-2 bg-dark-card border border-dark-border text-gray-400 text-sm font-semibold px-6 py-3 rounded-xl hover:border-brand-500/40 hover:text-brand-500 transition-all duration-200">
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
+                            Cargar más registros…
+                            <span class="text-xs text-gray-600">(${visible.length}/${filtered.length})</span>
+                        </button>
+                    </div>`;
+                }
+            }
+
+            el.innerHTML = html;
+        }
+
+        function loadMorePending() {
+            pendingItemsToShow += 20;
+            render();
+        }
+
+        function renderHistory(el) {
+            const completed = allOrders.filter(o => isCompleted(o.orderId || o.id || ''));
+            const q = searchQuery.toLowerCase().trim();
+            const filtered = q
+                ? completed.filter(o => {
+                    const id = (o.orderId || o.id || '').toLowerCase();
+                    const name = (o.customer || o.nombre || '').toLowerCase();
+                    return id.includes(q) || name.includes(q);
+                })
+                : completed;
+
+            // Lazy Rendering: slice first, then group
+            const visible = filtered.slice(0, historyItemsToShow);
+            const hasMore = filtered.length > historyItemsToShow;
+
+            // Group visible items by date
+            const groups = {};
+            visible.forEach(o => {
+                const label = getDateLabel(o.timestamp || o.fecha || o.date);
+                if (!groups[label]) groups[label] = [];
+                groups[label].push(o);
+            });
+
+            let html = `
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">Historial</h2>
+                    <span class="text-xs text-gray-500 font-medium">${filtered.length} completada${filtered.length !== 1 ? 's' : ''}</span>
+                </div>
+                ${buildSearchBar('Buscar en historial...')}
+            `;
+
+            if (filtered.length === 0) {
+                html += `
+                <div class="flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-20 h-20 bg-dark-card border border-dark-border rounded-full flex items-center justify-center mb-5">
+                        <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">${q ? 'Sin resultados' : 'Sin historial'}</h3>
+                    <p class="text-sm text-gray-500 max-w-[240px]">${q ? 'Intenta con otro término' : 'Las órdenes completadas aparecerán aquí'}</p>
+                </div>`;
+            } else {
+                Object.entries(groups).forEach(([label, orders]) => {
+                    html += `
+                    <div class="mb-6">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-brand-500/50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                            ${label}
+                        </p>
+                        <div class="space-y-3">${orders.map(o => buildOrderCard(o, true)).join('')}</div>
+                    </div>`;
+                });
+
+                if (hasMore) {
+                    html += `
+                    <div class="flex justify-center mt-5">
+                        <button onclick="loadMoreHistory()"
+                            class="group flex items-center gap-2 bg-dark-card border border-dark-border text-gray-400 text-sm font-semibold px-6 py-3 rounded-xl hover:border-brand-500/40 hover:text-brand-500 transition-all duration-200">
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
+                            Cargar más registros…
+                            <span class="text-xs text-gray-600">(${visible.length}/${filtered.length})</span>
+                        </button>
+                    </div>`;
+                }
+            }
+
+            el.innerHTML = html;
+        }
+
+        function loadMoreHistory() {
+            historyItemsToShow += 20;
+            render();
+        }
+
+        // --- Drill-down helpers ---
+        function drillDownToHistory() {
+            searchQuery = '';
+            switchTab('history');
+        }
+
+        function searchProductInHistory(productName) {
+            searchQuery = productName;
+            switchTab('history');
+        }
+
+        function performZReport() {
+            openResetModal();
+        }
+
+        function openResetModal() {
+            const modal = document.getElementById('resetModal');
+            const overlay = document.getElementById('resetOverlay');
+            const content = document.getElementById('resetContent');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function closeResetModal() {
+            const overlay = document.getElementById('resetOverlay');
+            const content = document.getElementById('resetContent');
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => document.getElementById('resetModal').classList.add('hidden'), 300);
+        }
+
+        function confirmZReport() {
+            lastZReportTimestamp = new Date().toISOString();
+            localStorage.setItem('lastZReportTimestamp', lastZReportTimestamp);
+            closeResetModal();
+            render();
+        }
+
+
+        // --- Inventario ---
+        function renderInventory(el) {
+            if (catalog.length === 0) {
+                el.innerHTML = `<div class="p-4 text-center text-slate-400">No hay productos en el catálogo.</div>`;
+                return;
+            }
+
+            const activeClasses = 'bg-brand-500';
+            const inactiveClasses = 'bg-slate-700';
+            const handleActiveClasses = 'translate-x-5';
+            const handleInactiveClasses = 'translate-x-0';
+
+            const listHtml = catalog.map(prod => {
+                const isAgotado = agotados.includes(prod.id);
+                // Si NO está agotado, el switch está prendido (Disponible)
+                const isAvailable = !isAgotado;
+
+                const bgClass = isAvailable ? activeClasses : inactiveClasses;
+                const handleClass = isAvailable ? handleActiveClasses : handleInactiveClasses;
+
+                return `
+                    <div class="glass-card mb-4 p-4 flex items-center justify-between transition-colors">
+                        <div>
+                            <h3 class="font-bold text-white text-lg">${prod.name}</h3>
+                            <p class="text-sm text-slate-400 font-mono">${isAvailable ? 'Disponible' : 'Agotado'}</p>
+                        </div>
+                        <button onclick="toggleInventory('${prod.id}', ${!isAvailable})" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${bgClass}" role="switch" aria-checked="${isAvailable}">
+                            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${handleClass}"></span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            el.innerHTML = `
+                <div class="p-4 animate-fade-in">
+                    <h2 class="text-2xl font-bold text-white mb-6 font-display">Control de Inventario</h2>
+                    ${listHtml}
+                </div>
+            `;
+        }
+
+        async function toggleInventory(prodId, makeAvailable) {
+            if (makeAvailable) {
+                // Remove from agotados
+                agotados = agotados.filter(id => id !== prodId);
+            } else {
+                // Add to agotados
+                if (!agotados.includes(prodId)) {
+                    agotados.push(prodId);
+                }
+            }
+
+            render(); // Update UI immediately
+
+            // Update local hash so polling doesn't immediately overwrite the optimistic update with old fetching state before the sheet saves
+            lastDataHash = JSON.stringify({ orders: allOrders, agotados: agotados, catalog: catalog });
+
+            const payload = {
+                action: 'updateInventory',
+                agotados: agotados
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                console.log('Inventario actualizado.');
+            }).catch(err => {
+                console.error("Error updating inventory:", err);
+            });
+        }
+
+        function renderAnalytics(el) {
+            // Metrics use Z-report-aware filter
+            const activeOrders = allOrders.filter(o => isAfterZReport(o.timestamp || o.fecha || o.date));
+            const completedActive = activeOrders.filter(o => isCompleted(o.orderId || o.id || ''));
+            const activeRevenue = activeOrders.reduce((s, o) => s + cleanTotal(o.total), 0);
+            const totalOrders = allOrders.length;
+            const avgTicket = activeOrders.length > 0 ? activeRevenue / activeOrders.length : 0;
+
+            // Last Z-report info
+            const zTime = lastZReportTimestamp ? formatTime(lastZReportTimestamp) : null;
+
+            // Top products (all-time, not affected by Z-report)
+            const productCounts = {};
+            allOrders.forEach(o => {
+                const items = parseItems(o);
+                items.forEach(item => {
+                    const name = item.name || item.nombre || 'Desconocido';
+                    const qty = item.quantity || item.cantidad || 1;
+                    productCounts[name] = (productCounts[name] || 0) + qty;
+                });
+            });
+            const topProducts = Object.entries(productCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            el.innerHTML = `
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-xl font-bold text-white">Resumen del Día</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportToCSV()" class="flex items-center justify-center w-9 h-9 bg-dark-card border border-dark-border text-gray-400 rounded-xl hover:text-white hover:border-gray-500 transition-all" title="Exportar a Excel">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        </button>
+                        <button onclick="performZReport()" class="flex items-center gap-1.5 bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-brand-500/20 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                            Finalizar
+                        </button>
+                    </div>
+                </div>
+
+                ${zTime ? `<div class="flex items-center gap-2 bg-dark-card border border-dark-border rounded-xl px-3.5 py-2.5 mb-5">
+                    <svg class="w-4 h-4 text-brand-500/60 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <p class="text-xs text-gray-500">Último corte realizado a las <span class="text-brand-500 font-semibold">${zTime}</span>. Métricas reiniciadas desde ese momento.</p>
+                </div>` : ''}
+
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="metric-card rounded-2xl p-4 cursor-pointer hover:border-brand-500/30 transition-colors" onclick="drillDownToHistory()">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Ingresos Hoy</span>
+                        </div>
+                        <p class="text-2xl font-bold text-white">${formatCurrency(activeRevenue)}</p>
+                    </div>
+                    <div class="metric-card rounded-2xl p-4 cursor-pointer hover:border-brand-500/30 transition-colors" onclick="drillDownToHistory()">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" /></svg>
+                            </div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Órdenes Hoy</span>
+                        </div>
+                        <p class="text-2xl font-bold text-white">${activeOrders.length}</p>
+                    </div>
+                    <div class="metric-card rounded-2xl p-4 cursor-pointer hover:border-brand-500/30 transition-colors" onclick="drillDownToHistory()">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Entregadas</span>
+                        </div>
+                        <p class="text-2xl font-bold text-white">${completedActive.length}</p>
+                    </div>
+                    <div class="metric-card rounded-2xl p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75" /></svg>
+                            </div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Ticket Prom.</span>
+                        </div>
+                        <p class="text-2xl font-bold text-white">${formatCurrency(avgTicket)}</p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /></svg>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Lo Más Vendido</h3>
+                    </div>
+                    ${topProducts.length === 0
+                    ? '<p class="text-sm text-gray-600 text-center py-8">Aún no hay datos de productos</p>'
+                    : `<div class="space-y-2">${topProducts.map(([name, count], i) => {
+                        const maxCount = topProducts[0][1];
+                        const pct = Math.round((count / maxCount) * 100);
+                        const escapedName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
+                            <div class="flex items-center gap-3 cursor-pointer hover:bg-white/[0.02] rounded-lg px-1 py-0.5 transition-colors -mx-1" onclick="searchProductInHistory('${escapedName}')">
+                                <span class="text-xs text-gray-600 w-5 text-right font-mono">${i + 1}</span>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm text-gray-300 font-medium truncate mr-2">${name}</span>
+                                        <span class="text-xs text-brand-500 font-bold shrink-0">${count} uds</span>
+                                    </div>
+                                    <div class="h-1 bg-dark-border rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full" style="width:${pct}%"></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }).join('')}</div>`}
+                </div>
+
+                <div class="metric-card rounded-2xl p-4 mt-4">
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Histórico</p>
+                    <p class="text-xl font-bold text-white">${totalOrders} órdenes registradas</p>
+                </div>
+            `;
+        }
+
+        // --- Detail Sheet ---
+        function openDetail(order) {
+            // Resume AudioContext on user gesture
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const sheet = document.getElementById('detailSheet');
+            const overlay = sheet.querySelector('.bottom-sheet-overlay');
+            const content = sheet.querySelector('.bottom-sheet-content');
+            const body = document.getElementById('detailBody');
+            const actions = document.getElementById('detailActions');
+
+            const id = order.orderId || order.id || '---';
+            const name = order.customer || order.nombre || 'Sin nombre';
+            const pet = order.pet || order.mascota || '---';
+            const delivery = order.delivery || order.entrega || '---';
+            const address = order.address || order.direccion || '';
+            const payment = order.payment || order.pago || '---';
+            const total = cleanTotal(order.total);
+            const time = formatTime(order.timestamp || order.fecha || order.date);
+            const date = formatDate(order.timestamp || order.fecha || order.date);
+            const items = parseItems(order);
+            const completed = isCompleted(id);
+
+            document.getElementById('detailTitle').textContent = `#${id}`;
+
+            body.innerHTML = `
+                <!-- Status -->
+                <div class="flex items-center gap-3 bg-dark-bg/60 border border-dark-border rounded-xl p-3.5">
+                    <div class="w-10 h-10 rounded-full ${completed ? 'bg-emerald-500/15' : 'bg-brand-500/15'} flex items-center justify-center shrink-0">
+                        ${completed
+                    ? '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+                    : '<svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold ${completed ? 'text-emerald-400' : 'text-brand-500'}">${completed ? 'Entregado' : 'Pendiente'}</p>
+                        <p class="text-xs text-gray-500">${date} a las ${time}</p>
+                    </div>
+                </div>
+
+                <!-- Customer Info -->
+                <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">Información del Cliente</p>
+                    <div class="space-y-2.5">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            <span class="text-sm text-gray-300">${name}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904" /></svg>
+                            <span class="text-sm text-gray-300">${pet}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                            <span class="text-sm text-gray-300">${delivery}${address ? ': ' + address : ''}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                            <span class="text-sm text-gray-300">${payment}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">Artículos</p>
+                    ${items.length === 0
+                    ? '<p class="text-sm text-gray-600 italic">No hay detalles de artículos disponibles</p>'
+                    : `<div class="space-y-2">${items.map(item => `
+                        <div class="flex items-center justify-between bg-dark-bg/40 border border-dark-border rounded-lg px-3.5 py-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-brand-500 font-bold text-sm">${item.quantity || 1}x</span>
+                                <span class="text-sm text-gray-300">${item.name || item.nombre || '---'}</span>
+                            </div>
+                            <span class="text-sm text-white font-semibold">${formatCurrency(item.subtotal || item.precio || (item.price * (item.quantity || 1)) || 0)}</span>
+                        </div>`).join('')}</div>`}
+                </div>
+
+                <!-- Total -->
+                <div class="flex items-center justify-between bg-brand-500/5 border border-brand-500/15 rounded-xl px-4 py-3">
+                    <span class="text-sm text-gray-400 font-medium">Total del Pedido</span>
+                    <span class="text-xl font-bold text-white">${formatCurrency(total)}</span>
+                </div>
+            `;
+
+            if (completed) {
+                actions.innerHTML = `
+                    <button onclick="unmarkCompleted('${id}')" class="w-full bg-dark-bg border border-dark-border text-gray-400 font-semibold py-3.5 rounded-xl hover:border-brand-500/30 hover:text-brand-500 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                        Regresar a Pendientes
+                    </button>`;
+            } else {
+                actions.innerHTML = `
+                    <button onclick="markCompleted('${id}')" class="w-full bg-gradient-to-r from-brand-500 to-brand-400 text-black font-semibold py-3.5 rounded-xl hover:from-brand-400 hover:to-brand-300 transition-all flex items-center justify-center gap-2.5 shadow-[0_0_24px_rgba(245,158,11,0.2)]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Marcar como Entregado
+                    </button>`;
+            }
+
+            sheet.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+                content.classList.remove('translate-y-full');
+            });
+        }
+
+        function closeDetail() {
+            const sheet = document.getElementById('detailSheet');
+            const overlay = sheet.querySelector('.bottom-sheet-overlay');
+            const content = sheet.querySelector('.bottom-sheet-content');
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0');
+            content.classList.add('translate-y-full');
+            setTimeout(() => sheet.classList.add('hidden'), 350);
+        }
+
+        // --- Init (Cache-First) ---
+        function init() {
+            // Resume audio context on first tap anywhere
+            document.addEventListener('click', () => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }, { once: true });
+
+            // 1️⃣ Intenta pintar la UI al instante desde caché
+            const hadCache = loadFromCache();
+
+            // 2️⃣ Fetch real en segundo plano (no bloquea el hilo principal)
+            //    Si había caché, el usuario ya ve datos; si no, verá el loading normal.
+            fetchOrders();
+
+            // 3️⃣ Polling periódico
+            pollTimer = setInterval(fetchOrders, POLL_INTERVAL);
+
+            // Solo renderizar skeleton si NO había caché
+            if (!hadCache) render();
+        }
+
+        // --- Lógica de Seguridad (PIN — validación en servidor) ---
+        function unlockApp() {
+            document.getElementById('pinScreen').classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => document.getElementById('pinScreen').classList.add('hidden'), 500);
+            sessionStorage.setItem('adminUnlocked', 'true');
+            if (isFirstLoad) init();
+        }
+
+        async function verifyPIN() {
+            const input = document.getElementById('pinInput');
+            const error = document.getElementById('pinError');
+            const btn = input.closest('#pinScreen').querySelector('button');
+
+            // Si ya fue autenticado en esta sesión, desbloquear directo
+            if (sessionStorage.getItem('adminUnlocked') === 'true') {
+                unlockApp();
+                return;
+            }
+
+            const pin = input.value.trim();
+            if (!pin) return;
+
+            // Deshabilitar botón mientras se valida
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'verifyPin', pin: pin })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    unlockApp();
+                } else {
+                    error.textContent = 'PIN Incorrecto';
+                    error.classList.remove('hidden');
+                    input.value = '';
+                    input.classList.add('border-red-500');
+                    setTimeout(() => input.classList.remove('border-red-500'), 1500);
+                }
+            } catch (err) {
+                console.error('Error verificando PIN:', err);
+                error.textContent = 'Error de conexión — revisa tu internet o el deploy del script';
+                error.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Desbloquear';
+            }
+        }
+
+        // Auto-desbloquear si ya fue autenticado en esta sesión del navegador
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('adminUnlocked') === 'true') {
+                verifyPIN();
+            }
+        });
+
+        // --- Lógica de Exportación CSV ---
+        window.exportToCSV = function () {
+            const activeOrders = allOrders.filter(o => isAfterZReport(o.timestamp || o.fecha || o.date));
+            if (activeOrders.length === 0) return alert('No hay datos para exportar.');
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Folio,Fecha,Cliente,Monto,Estado\n";
+
+            activeOrders.forEach(o => {
+                const id = o.orderId || o.id || '';
+                const date = formatDate(o.timestamp || o.fecha || o.date);
+                const name = (o.customer || o.nombre || 'Desconocido').replace(/,/g, ''); // quitar comas
+                const total = cleanTotal(o.total);
+                const status = isCompleted(id) ? 'Entregado' : 'Pendiente';
+
+                csvContent += `${id},${date},${name},${total},${status}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Corte_Croqueteria_${new Date().toLocaleDateString('es-MX').replace(/\//g, '-')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    </script>
+
+    <script>
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.classList.remove('hidden');
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Admin App instalada con éxito');
+                    document.getElementById('pwaInstallBanner').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.location.reload(true);
+                            }
+                        });
+                    });
+                }).catch(error => console.error('Error Service Worker:', error));
+
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        refreshing = true;
+                        window.location.reload(true);
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
